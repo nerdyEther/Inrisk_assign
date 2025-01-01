@@ -28,14 +28,14 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ data }) => {
 
   return (
     <div className="relative">
-      <Card className="w-full h-[480px] rounded-[32px] overflow-hidden bg-white shadow-xl shadow-black/30 relative before:absolute before:inset-0 before:p-[2px] before:bg-gradient-to-r before:from-[#f97316] before:via-[#10b981] before:to-[#3b82f6] before:rounded-[32px] before:-z-10">
+      <Card className="w-full h-[480px] rounded-[32px] overflow-hidden bg-white shadow-[0_0_20px_rgba(0,0,0,0.15)] relative before:absolute before:inset-0 before:p-[2px] before:bg-gradient-to-r before:from-[#f97316] before:via-[#10b981] before:to-[#3b82f6] before:rounded-[32px] before:-z-10">
         <CardContent className="p-6">
           <div className="flex justify-between items-center mb-4 relative z-20">
             <div className="space-y-0.5">
               <h3 className="text-gray-600 text-base font-light tracking-wide transition-all duration-500 hover:text-gray-800 hover:scale-105">
                 Weather Trends
               </h3>
-              <p className="text-2xl font-semibold text-gray-800 tracking-tight transition-all duration-500 hover:scale-105">
+              <p className="text-2xl font-semibold tracking-tight transition-all duration-500 hover:scale-105 bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-400 text-transparent bg-clip-text">
                 {data.length} Day Overview
               </p>
             </div>

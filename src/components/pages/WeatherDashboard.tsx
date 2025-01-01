@@ -5,9 +5,10 @@ import toast, { Toaster } from 'react-hot-toast';
 import TopNav from '@/components/pages/TopNav';
 import WeatherCharts from '@/components/pages/WeatherCharts';
 import WeatherTable from '@/components/pages/WeatherTable';
-// Removing unused Card and CardContent imports
 import MainNav from './MainNav';
 import Globe from "@/components/ui/globe";
+import {WeatherApiService} from '@/components/pages/WeatherAPI';
+
 
 interface InputState {
   latitude: string;
@@ -40,18 +41,44 @@ interface ProcessedWeatherData {
   meanAppTemp: number;
 }
 
-const PlaceholderState: React.FC = () => (
-  <div className="w-full h-full flex items-center justify-center">
-    <div className="relative w-full max-w-2xl bg-white rounded-3xl">
-      <h2 className="absolute top-8 left-1/2 -translate-x-1/2 z-10 text-2xl font-semibold text-blue-500">
-        Explore Weather over Globe
-      </h2>
-      <div className="relative w-full h-[450px] flex items-center justify-center">
-        <Globe className="scale-100" />
+const PlaceholderState: React.FC = () => {
+  const [visibleWords, setVisibleWords] = React.useState<number>(0);
+  const words = ['Explore', 'Weather', 'over', 'Globe'];
+
+  React.useEffect(() => {
+    const intervalId = setInterval(() => {
+      setVisibleWords(prev => {
+        if (prev < words.length) {
+          return prev + 1;
+        }
+        clearInterval(intervalId);
+        return prev;
+      });
+    }, 500);
+
+    return () => clearInterval(intervalId);
+  }, [words.length]); 
+
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="relative w-full max-w-2xl bg-white rounded-3xl">
+        <h2 className="absolute top-8 left-1/2 -translate-x-1/2 z-10 text-2xl font-semibold text-blue-500 hidden md:block">
+          {words.slice(0, visibleWords).map((word, index) => (
+            <React.Fragment key={word}>
+              <span className="animate-[fadeIn_0.5s_ease-in]">
+                {word}
+              </span>
+              {index < visibleWords - 1 ? ' ' : ''}
+            </React.Fragment>
+          ))}
+        </h2>
+        <div className="w-full h-[450px] flex items-center justify-center">
+          <Globe className="scale-100" />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const WeatherDashboard: React.FC = () => {
   const [inputs, setInputs] = useState<InputState>({
@@ -68,149 +95,93 @@ const WeatherDashboard: React.FC = () => {
 
   const showErrorToast = (message: string) => {
     toast.error(message, {
-      duration: 5000,
+      duration: 4000,
       style: {
-        borderRadius: '10px',
-        background: '#333',
-        color: '#fff',
+        background: 'white',
+        color: '#334155',
+        borderRadius: '1rem',
+        padding: '16px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
       },
-    });
-  };
-
-  const showSuccessToast = (message: string) => {
-    toast.success(message, {
-      duration: 3000,
-      style: {
-        borderRadius: '10px',
-        background: '#333',
-        color: '#fff',
-      },
+      icon: '❌',
     });
   };
 
   const validateInputs = (): boolean => {
-    const errors: string[] = [];
-
+ 
+    const hasNoCoordinates = !inputs.latitude && !inputs.longitude;
+    const hasNoDates = !inputs.startDate && !inputs.endDate;
+    
+    if (hasNoCoordinates && hasNoDates) {
+      showErrorToast("Please enter coordinates and select dates to fetch weather data");
+      return false;
+    }
+  
+  
     if (!inputs.latitude || !inputs.longitude) {
-      errors.push("Please enter both latitude and longitude values.");
-    } else {
-      const lat = parseFloat(inputs.latitude);
-      const lon = parseFloat(inputs.longitude);
-
-      if (isNaN(lat) || lat < -90 || lat > 90) {
-        errors.push("Latitude must be between -90 and 90 degrees.");
-      }
-      if (isNaN(lon) || lon < -180 || lon > 180) {
-        errors.push("Longitude must be between -180 and 180 degrees.");
-      }
+      showErrorToast("Please enter both latitude and longitude values");
+      return false;
     }
+  
 
+    const lat = parseFloat(inputs.latitude);
+    const lon = parseFloat(inputs.longitude);
+  
+    if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lon) || lon < -180 || lon > 180) {
+      showErrorToast("Please enter valid coordinates (Latitude: -90 to 90, Longitude: -180 to 180)");
+      return false;
+    }
+  
+  
     if (!inputs.startDate || !inputs.endDate) {
-      errors.push("Please select both start and end dates.");
-    } else {
-      const start = new Date(inputs.startDate);
-      const end = new Date(inputs.endDate);
-      
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        errors.push("Please enter valid dates.");
-      } else {
-        if (end < start) {
-          errors.push("End date must be after start date.");
-        }
-        
-        const oneYear = 365 * 24 * 60 * 60 * 1000;
-        if (end.getTime() - start.getTime() > oneYear) {
-          errors.push("Date range cannot exceed 1 year.");
-        }
-      }
-    }
-
-    if (errors.length > 0) {
-      errors.forEach((error, index) => {
-        setTimeout(() => {
-          showErrorToast(error);
-        }, index * 500);
-      });
+      showErrorToast("Please select both start and end dates");
       return false;
     }
 
-    return true;
-  };
-
-  const validateWeatherData = (data: unknown): data is WeatherData => {
-    if (!data || typeof data !== 'object') {
-      showErrorToast("Invalid data format received");
-      return false;
-    }
-
-    if (!('daily' in data) || typeof (data as WeatherData).daily !== 'object') {
-      showErrorToast("Missing daily weather data");
-      return false;
-    }
-
-    const requiredFields = [
-      'time',
-      'temperature_2m_max',
-      'temperature_2m_min',
-      'temperature_2m_mean',
-      'apparent_temperature_max',
-      'apparent_temperature_min',
-      'apparent_temperature_mean'
-    ];
-
-    const dailyData = (data as WeatherData).daily;
+    const start = new Date(inputs.startDate);
+    const end = new Date(inputs.endDate);
     
-    interface DailyDataFields {
-      [key: string]: unknown[];
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      showErrorToast("Please enter valid dates");
+      return false;
+    }
+  
+    if (end < start) {
+      showErrorToast("End date must be after start date");
+      return false;
     }
     
-    for (const field of requiredFields) {
-      if (!Array.isArray((dailyData as DailyDataFields)[field])) {
-        showErrorToast(`Missing or invalid ${field} data`);
-        return false;
-      }
-    }
-
-    const timeLength = dailyData.time.length;
-    const allFieldsMatch = requiredFields.every(field => 
-      (dailyData as DailyDataFields)[field].length === timeLength
-    );
-
-    if (!allFieldsMatch) {
-      showErrorToast("Inconsistent data received");
+    const oneYear = 365 * 24 * 60 * 60 * 1000;
+    if (end.getTime() - start.getTime() > oneYear) {
+      showErrorToast("Date range cannot exceed 1 year");
       return false;
     }
-
+  
     return true;
   };
 
   const fetchWeatherData = async (): Promise<void> => {
     if (!validateInputs()) return;
-
+  
     setLoading(true);
     setError(null);
     setCurrentPage(1);
-
+  
     try {
-      const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${inputs.latitude}&longitude=${inputs.longitude}&start_date=${inputs.startDate}&end_date=${inputs.endDate}&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,apparent_temperature_max,apparent_temperature_min,apparent_temperature_mean`;
-      
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch weather data: ${response.statusText}`);
+      const data = await WeatherApiService.fetchWeatherData({
+        latitude: inputs.latitude,
+        longitude: inputs.longitude,
+        startDate: inputs.startDate,
+        endDate: inputs.endDate
+      });
+  
+  
+      if (data && typeof data === 'object' && 'daily' in data) {
+        setWeatherData(data);
+      } else {
+        throw new Error('Invalid data format received');
       }
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.reason || 'API returned an error');
-      }
-
-      if (!validateWeatherData(data)) {
-        throw new Error('Invalid data structure received');
-      }
-
-      setWeatherData(data);
-      showSuccessToast(`Weather data retrieved for ${data.daily.time.length} days`);
+     
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
@@ -272,9 +243,9 @@ const WeatherDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-screen">
       <MainNav />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pt-16">
         <TopNav 
           inputs={inputs}
           setInputs={setInputs}
