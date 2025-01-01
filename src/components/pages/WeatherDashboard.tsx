@@ -5,7 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import TopNav from '@/components/pages/TopNav';
 import WeatherCharts from '@/components/pages/WeatherCharts';
 import WeatherTable from '@/components/pages/WeatherTable';
-import { Card, CardContent } from "@/components/ui/card";
+// Removing unused Card and CardContent imports
 import MainNav from './MainNav';
 import Globe from "@/components/ui/globe";
 
@@ -91,7 +91,6 @@ const WeatherDashboard: React.FC = () => {
   const validateInputs = (): boolean => {
     const errors: string[] = [];
 
-    // Validate coordinates
     if (!inputs.latitude || !inputs.longitude) {
       errors.push("Please enter both latitude and longitude values.");
     } else {
@@ -106,7 +105,6 @@ const WeatherDashboard: React.FC = () => {
       }
     }
 
-    // Validate dates
     if (!inputs.startDate || !inputs.endDate) {
       errors.push("Please select both start and end dates.");
     } else {
@@ -139,13 +137,13 @@ const WeatherDashboard: React.FC = () => {
     return true;
   };
 
-  const validateWeatherData = (data: any): data is WeatherData => {
+  const validateWeatherData = (data: unknown): data is WeatherData => {
     if (!data || typeof data !== 'object') {
       showErrorToast("Invalid data format received");
       return false;
     }
 
-    if (!data.daily || typeof data.daily !== 'object') {
+    if (!('daily' in data) || typeof (data as WeatherData).daily !== 'object') {
       showErrorToast("Missing daily weather data");
       return false;
     }
@@ -160,16 +158,22 @@ const WeatherDashboard: React.FC = () => {
       'apparent_temperature_mean'
     ];
 
+    const dailyData = (data as WeatherData).daily;
+    
+    interface DailyDataFields {
+      [key: string]: unknown[];
+    }
+    
     for (const field of requiredFields) {
-      if (!Array.isArray(data.daily[field])) {
+      if (!Array.isArray((dailyData as DailyDataFields)[field])) {
         showErrorToast(`Missing or invalid ${field} data`);
         return false;
       }
     }
 
-    const timeLength = data.daily.time.length;
+    const timeLength = dailyData.time.length;
     const allFieldsMatch = requiredFields.every(field => 
-      data.daily[field].length === timeLength
+      (dailyData as DailyDataFields)[field].length === timeLength
     );
 
     if (!allFieldsMatch) {
@@ -235,7 +239,7 @@ const WeatherDashboard: React.FC = () => {
         minAppTemp: weatherData.daily.apparent_temperature_min[index] ?? 0,
         meanAppTemp: weatherData.daily.apparent_temperature_mean[index] ?? 0,
       })).slice(startIndex, endIndex);
-    } catch (error) {
+    } catch {
       showErrorToast("Error processing weather data");
       return [];
     }
@@ -256,7 +260,7 @@ const WeatherDashboard: React.FC = () => {
         minAppTemp: weatherData.daily.apparent_temperature_min[index] ?? 0,
         meanAppTemp: weatherData.daily.apparent_temperature_mean[index] ?? 0,
       }));
-    } catch (error) {
+    } catch {
       showErrorToast("Error processing chart data");
       return [];
     }

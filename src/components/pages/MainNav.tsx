@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { Settings, Bell, CloudSun } from 'lucide-react';
+import Image from 'next/image';
 
 // Define navigation items type
 type NavItem = 'Analytics' | 'Current Weather' | 'Forecast';
@@ -50,11 +51,14 @@ const MainNav = () => {
           <IconButton hasNotification>
             <Bell className="h-5 w-5" />
           </IconButton>
-          <div className="h-9 w-9 rounded-full overflow-hidden ring-2 ring-gray-100 transition-all duration-300 hover:ring-blue-400 hover:scale-105 cursor-pointer">
-            <img 
+          <div className="relative h-9 w-9 rounded-full overflow-hidden ring-2 ring-gray-100 transition-all duration-300 hover:ring-blue-400 hover:scale-105 cursor-pointer">
+            <Image 
               src="/avatar.jpg"
               alt="Profile"
-              className="h-full w-full object-cover"
+              fill
+              sizes="36px"
+              className="object-cover"
+              priority
             />
           </div>
         </div>
