@@ -2,12 +2,12 @@
 
 1. Clone the repository:
    ```
-   git clone https://github.com/username/repository.git
+   git clone https://github.com/nerdyEther/Inrisk_assign.git
    ```
 
 2. Navigate to the project directory:
    ```
-   cd repository
+   cd Inrisk_assign
    ```
 
 3. Install the required dependencies:
