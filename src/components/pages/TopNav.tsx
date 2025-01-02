@@ -27,28 +27,25 @@ const TopNav: React.FC<TopNavProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
-  //  max date (3 days before current date)
+  // max date (3 days before current date)
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() - 3);
   const maxDateString = maxDate.toISOString().split('T')[0];
 
-  //  min date (1 year before max date)
+  // min date (1 year before max date)
   const minDate = new Date(maxDate);
   minDate.setFullYear(minDate.getFullYear() - 1);
   const minDateString = minDate.toISOString().split('T')[0];
 
-
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartDate = e.target.value;
     setInputs(prev => {
-      
       if (prev.endDate && prev.endDate < newStartDate) {
         return { ...prev, startDate: newStartDate, endDate: newStartDate };
       }
       return { ...prev, startDate: newStartDate };
     });
   };
-
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEndDate = e.target.value;
@@ -59,7 +56,6 @@ const TopNav: React.FC<TopNavProps> = ({
     <div className="w-full bg-white/50 backdrop-blur-sm py-2 sm:py-4">
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6">
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border p-3 sm:p-4">
-        
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="w-full md:hidden flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
@@ -77,13 +73,10 @@ const TopNav: React.FC<TopNavProps> = ({
             />
           </button>
 
-          
           <div className={`${
             isExpanded ? 'block' : 'hidden'
           } md:block`}>
             <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-4 p-4 md:p-0">
-            
-
               <div className="flex-[2] space-y-3 md:space-y-1">
                 <div className="flex items-center gap-2 px-1">
                   <MapPin className="w-4 h-4 text-gray-400" />
@@ -107,7 +100,6 @@ const TopNav: React.FC<TopNavProps> = ({
                 </div>
               </div>
 
-          
               <div className="flex-1 flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 space-y-3 md:space-y-1">
                   <div className="flex items-center gap-2 px-1">
@@ -144,18 +136,19 @@ const TopNav: React.FC<TopNavProps> = ({
                 </div>
               </div>
 
-           
-              <Button 
-                onClick={() => {
-                  onFetchData();
-                  setIsExpanded(false);
-                }}
-                disabled={loading}
-                className="h-12 w-full md:w-auto px-8 bg-blue-500 hover:bg-blue-600 transition-all duration-300 rounded-xl"
-              >
-                <Search className="w-5 h-5 mr-2" />
-                {loading ? 'Searching...' : 'Search'}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  onClick={() => {
+                    onFetchData();
+                    setIsExpanded(false);
+                  }}
+                  disabled={loading}
+                  className="h-12 w-full md:w-auto px-8 bg-blue-500 hover:bg-blue-600 transition-all duration-300 rounded-xl"
+                >
+                  <Search className="w-5 h-5 mr-2" />
+                  {loading ? 'Searching...' : 'Search'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

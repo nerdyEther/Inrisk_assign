@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 "use client"
 
 import React, { useState } from 'react';
@@ -8,7 +10,6 @@ import WeatherTable from '@/components/pages/WeatherTable';
 import MainNav from './MainNav';
 import Globe from "@/components/ui/globe";
 import {WeatherApiService} from '@/components/pages/WeatherAPI';
-
 
 interface InputState {
   latitude: string;
@@ -91,6 +92,7 @@ const WeatherDashboard: React.FC = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
+
   const [error, setError] = useState<string | null>(null);
 
   const showErrorToast = (message: string) => {
@@ -108,17 +110,17 @@ const WeatherDashboard: React.FC = () => {
   };
 
   const validateInputs = (): boolean => {
-
-    const maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() - 3);
-    maxDate.setHours(0, 0, 0, 0);  
+    const currentDate = new Date();
+    currentDate.setUTCHours(0, 0, 0, 0);
   
-
+    const maxDate = new Date(currentDate);
+    maxDate.setDate(currentDate.getDate() - 3);
+    maxDate.setUTCHours(0, 0, 0, 0);
+  
     const minDate = new Date(maxDate);
-    minDate.setFullYear(minDate.getFullYear() - 1);
-    minDate.setHours(0, 0, 0, 0); 
+    minDate.setFullYear(maxDate.getFullYear() - 1);
+    minDate.setUTCHours(0, 0, 0, 0);
   
-
     const hasNoCoordinates = !inputs.latitude && !inputs.longitude;
     const hasNoDates = !inputs.startDate && !inputs.endDate;
     
@@ -126,7 +128,6 @@ const WeatherDashboard: React.FC = () => {
       showErrorToast("Please enter coordinates and select dates to fetch weather data");
       return false;
     }
-  
   
     if (!inputs.latitude || !inputs.longitude) {
       showErrorToast("Please enter both latitude and longitude values");
@@ -141,47 +142,60 @@ const WeatherDashboard: React.FC = () => {
       return false;
     }
   
-
     if (!inputs.startDate || !inputs.endDate) {
       showErrorToast("Please select both start and end dates");
       return false;
     }
   
-    const startDate = new Date(inputs.startDate);
-    const endDate = new Date(inputs.endDate);
-    
-
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      showErrorToast("Please enter valid dates");
+    try {
+      const startDate = new Date(inputs.startDate + 'T00:00:00Z');
+      const endDate = new Date(inputs.endDate + 'T00:00:00Z');
+  
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        showErrorToast("Please enter valid dates");
+        return false;
+      }
+  
+      if (startDate > currentDate || endDate > currentDate) {
+        showErrorToast("Cannot select future dates");
+        return false;
+      }
+  
+      if (startDate > maxDate || endDate > maxDate) {
+        showErrorToast("Max date selected can be 3 days before current date");
+        return false;
+      }
+  
+      if (startDate < minDate || endDate < minDate) {
+        showErrorToast("Dates cannot be earlier than 1 year before the maximum allowed date");
+        return false;
+      }
+  
+      if (endDate < startDate) {
+        showErrorToast("End date must be after start date");
+        return false;
+      }
+  
+      const oneYear = 365 * 24 * 60 * 60 * 1000;
+      if (endDate.getTime() - startDate.getTime() > oneYear) {
+        showErrorToast("Date range cannot exceed 1 year");
+        return false;
+      }
+  
+      const formattedStartDate = startDate.toISOString().split('T')[0];
+      const formattedEndDate = endDate.toISOString().split('T')[0];
+  
+      setInputs(prev => ({
+        ...prev,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate
+      }));
+  
+      return true;
+    } catch (error) {
+      showErrorToast("Invalid date format");
       return false;
     }
-  
-  
-    if (endDate < startDate) {
-      showErrorToast("End date must be after start date");
-      return false;
-    }
-  
-
-    if (startDate > maxDate || endDate > maxDate) {
-      showErrorToast("Max date selected can be 3 days before current date");
-      return false;
-    }
-  
- 
-    if (startDate < minDate || endDate < minDate) {
-      showErrorToast("Dates cannot be earlier than 1 year before the maximum allowed date");
-      return false;
-    }
-    
-   
-    const oneYear = 365 * 24 * 60 * 60 * 1000;
-    if (endDate.getTime() - startDate.getTime() > oneYear) {
-      showErrorToast("Date range cannot exceed 1 year");
-      return false;
-    }
-  
-    return true;
   };
 
   const fetchWeatherData = async (): Promise<void> => {
@@ -199,13 +213,11 @@ const WeatherDashboard: React.FC = () => {
         endDate: inputs.endDate
       });
   
-  
       if (data && typeof data === 'object' && 'daily' in data) {
         setWeatherData(data);
       } else {
         throw new Error('Invalid data format received');
       }
-     
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
@@ -276,7 +288,7 @@ const WeatherDashboard: React.FC = () => {
           onFetchData={fetchWeatherData}
           loading={loading}
         />
-        <main className="flex-1">
+        <main className="flex-1 p-4">
           {loading && (
             <div className="w-full h-64 flex items-center justify-center">
               <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
@@ -285,7 +297,16 @@ const WeatherDashboard: React.FC = () => {
           
           {!loading && !weatherData && !error && <PlaceholderState />}
           
-          {!loading && weatherData && (
+          {!loading && error && (
+  <div className="w-full h-64 flex items-center justify-center">
+    <div className="text-red-500 text-center">
+      <p className="text-xl font-semibold mb-2">Error</p>
+      <p>{error}</p>
+    </div>
+  </div>
+)}
+          
+          {!loading && !error && weatherData && (
             <div className="h-full max-w-7xl mx-auto p-6 space-y-6">
               <WeatherCharts data={getChartData()} />
               <WeatherTable 
