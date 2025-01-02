@@ -108,7 +108,17 @@ const WeatherDashboard: React.FC = () => {
   };
 
   const validateInputs = (): boolean => {
- 
+
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() - 3);
+    maxDate.setHours(0, 0, 0, 0);  
+  
+
+    const minDate = new Date(maxDate);
+    minDate.setFullYear(minDate.getFullYear() - 1);
+    minDate.setHours(0, 0, 0, 0); 
+  
+
     const hasNoCoordinates = !inputs.latitude && !inputs.longitude;
     const hasNoDates = !inputs.startDate && !inputs.endDate;
     
@@ -123,7 +133,6 @@ const WeatherDashboard: React.FC = () => {
       return false;
     }
   
-
     const lat = parseFloat(inputs.latitude);
     const lon = parseFloat(inputs.longitude);
   
@@ -132,27 +141,42 @@ const WeatherDashboard: React.FC = () => {
       return false;
     }
   
-  
+
     if (!inputs.startDate || !inputs.endDate) {
       showErrorToast("Please select both start and end dates");
       return false;
     }
-
-    const start = new Date(inputs.startDate);
-    const end = new Date(inputs.endDate);
+  
+    const startDate = new Date(inputs.startDate);
+    const endDate = new Date(inputs.endDate);
     
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       showErrorToast("Please enter valid dates");
       return false;
     }
   
-    if (end < start) {
+  
+    if (endDate < startDate) {
       showErrorToast("End date must be after start date");
       return false;
     }
+  
+
+    if (startDate > maxDate || endDate > maxDate) {
+      showErrorToast("Max date selected can be 3 days before current date");
+      return false;
+    }
+  
+ 
+    if (startDate < minDate || endDate < minDate) {
+      showErrorToast("Dates cannot be earlier than 1 year before the maximum allowed date");
+      return false;
+    }
     
+   
     const oneYear = 365 * 24 * 60 * 60 * 1000;
-    if (end.getTime() - start.getTime() > oneYear) {
+    if (endDate.getTime() - startDate.getTime() > oneYear) {
       showErrorToast("Date range cannot exceed 1 year");
       return false;
     }
